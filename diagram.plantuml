@@ -1,0 +1,71 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_TOP_DOWN()
+
+title Container diagram for Яндекс.Фильмы System
+
+AddElementTag("new", $bgColor="green")
+AddRelTag("new", $textColor="green", $lineColor="green")
+AddBoundaryTag("new", $borderColor="green")
+
+Person(user, "User", "Пользователь кинотеатра")
+Person(admin, "Content Admin", "Администратор контента")
+Person(analytic, "Analytic", "Аналитик данных", $tags="new")
+
+
+System_Boundary(yafilm_system, "Яндекс.Фильмы") {
+   System_Boundary(ugc_api, "UGC API", $tags="new") {
+        Container(ugcService, "UGC Service", "Manages user generated content", $tags="new")
+        Container(olapdb, "OLAP DB", "Store event data for analysis", $tags="new")
+        Container(broker, "Message Broker", $tags="new")
+        Container(ugcdb, "UGC DB", "Stores likes, bookmarks and reviews", $tags="new")
+        Container(ugc_etl, "ETL", $tags="new")
+        Container(ugc_content_etl, "Content ETL", $tags="new")
+    }
+    System_Boundary(auth_api, "Auth API") {
+        Container(authService, "Authentication Service", "Handles user authentication.")
+        Container(authdb, "Auth DB", "Store auth-related user data")
+    }
+    System_Boundary(movies_api, "Movies API") {
+        Container(contentService, "Content Service", "Manages and delivers content.")
+        Container(contentdb, "Content DB", "Store fil-related data")
+        Container(searchdb, "Search DB", "Full text search database")
+    }
+    System_Boundary(adminInterface, "Admin interface") {
+        Container(adminService, "Admin Service")
+        Container(etlServices, "ETL services to sync data")
+   }
+}
+System_Ext(frontend, "Frontend")
+
+Rel(user, ugcService, "Generate ugc events", $tags="new")
+
+Rel(ugc_content_etl, contentdb, "Get content from DB", $tags="new")
+Rel(ugc_content_etl, olapdb, "Write content data ro DB", $tags="new")
+
+Rel(ugc_etl, olapdb, "Stores event data", $tags="new")
+Rel(ugc_etl, ugcdb, "Stores user event data", $tags="new")
+Rel(ugc_etl, broker, "Get messages from", $tags="new")
+
+Rel(frontend, ugcService, "Send events", $tags="new")
+Rel(ugcService, broker, "Send events", $tags="new")
+Rel(ugcService, ugcdb, "Get user event data", $tags="new")
+
+Rel(analytic, olapdb, "Analyzes events", $tags="new")
+
+
+Rel(user, contentService, "Fetches content from")
+Rel(user, authService, "Uses for authentication")
+
+Rel(admin, adminService, "Manages and monitors")
+Rel(adminService, contentdb, "Read and write data")
+Rel(etlServices, contentdb, "Read data from")
+Rel(etlServices, searchdb, "Write sata to")
+
+
+Rel(contentService, contentdb, "Read data")
+Rel(authService, authdb, "Read and write data")
+
+
+@enduml
